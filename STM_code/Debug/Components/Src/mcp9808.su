@@ -1,0 +1,6 @@
+../Components/Src/mcp9808.c:32:6:MCP9808_Init	16	static
+../Components/Src/mcp9808.c:45:26:MCP9808_Write	32	static
+../Components/Src/mcp9808.c:61:26:MCP9808_Read	40	static
+../Components/Src/mcp9808.c:90:19:MCP9808_MeasureTemperature	32	static
+../Components/Src/mcp9808.c:123:19:MCP9808_SetResolution	24	static
+../Components/Src/mcp9808.c:147:19:MCP9808_GetResolution	16	static

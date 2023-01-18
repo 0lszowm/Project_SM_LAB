@@ -21,13 +21,13 @@
 #include "i2c.h"
 #include "tim.h"
 #include "usart.h"
-#include "usb_otg.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ssd1306.h"
 #include "ssd1306_tests.h"
+#include "mcp9808.h"
 
 /* USER CODE END Includes */
 
@@ -49,6 +49,7 @@
 
 /* USER CODE BEGIN PV */
 char received_data[3];  // do tego będą sie odbierać dane z portu szeregowego
+float current_temperature = 0.00;  // temperatura aktualna tu bedzie
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,18 +70,29 @@ void wyswietlacz(){
 	ssd1306_WriteString(strcat(buf, received_data), Font_7x10, White);
 	y += 10;
 
+	char temp_buf[6];
+	gcvt(current_temperature, 6, temp_buf);
+	ssd1306_SetCursor(2, y);
+	char buf0[20] = "Current temp:";
+	ssd1306_WriteString(strcat(buf0, temp_buf), Font_7x10, White);
+	y += 10;
+
 	ssd1306_UpdateScreen();
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim->Instance == TIM2){ // If the interrupt is from timer 2
 		char jd[2] = "JD";
-		HAL_UART_Transmit(&huart3, jd, strlen(jd), 100);
+		//HAL_UART_Transmit(&huart3, jd, strlen(jd), 100);
 		HAL_UART_Transmit(&huart3, received_data, strlen(received_data), 100);
 	}
 	if(htim->Instance == TIM3){
 		//ssd1306_TestAll();
+		//MCP9808_MeasureTemperature(&current_temperature);
 		wyswietlacz();
+	}
+	if(htim->Instance == TIM4){
+		 MCP9808_MeasureTemperature(&current_temperature);
 	}
 
 }
@@ -121,16 +133,23 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART3_UART_Init();
-  MX_USB_OTG_FS_PCD_Init();
   MX_I2C2_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
+  MX_TIM4_Init();
+  MX_I2C4_Init();
   /* USER CODE BEGIN 2 */
   //ssd1306_TestAll();
   ssd1306_Init(); // Inicjalizacja wyświetlacza
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_Base_Start_IT(&htim3);
+  HAL_TIM_Base_Start_IT(&htim4);
   HAL_UART_Receive_IT(&huart3, received_data, 3);
+  MCP9808_Init(&hi2c4, 0x18); // inicjalizacja sensora temperatury
+  MCP9808_SetResolution(MCP9808_Medium_Res);  // tutaj nastawia się srednia rozdzielczość
+
+
+
 
   /* USER CODE END 2 */
 

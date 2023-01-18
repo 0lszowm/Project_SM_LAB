@@ -5,16 +5,19 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../Components/Src/mcp9808.c \
 ../Components/Src/ssd1306.c \
 ../Components/Src/ssd1306_fonts.c \
 ../Components/Src/ssd1306_tests.c 
 
 OBJS += \
+./Components/Src/mcp9808.o \
 ./Components/Src/ssd1306.o \
 ./Components/Src/ssd1306_fonts.o \
 ./Components/Src/ssd1306_tests.o 
 
 C_DEPS += \
+./Components/Src/mcp9808.d \
 ./Components/Src/ssd1306.d \
 ./Components/Src/ssd1306_fonts.d \
 ./Components/Src/ssd1306_tests.d 
@@ -27,7 +30,7 @@ Components/Src/%.o Components/Src/%.su: ../Components/Src/%.c Components/Src/sub
 clean: clean-Components-2f-Src
 
 clean-Components-2f-Src:
-	-$(RM) ./Components/Src/ssd1306.d ./Components/Src/ssd1306.o ./Components/Src/ssd1306.su ./Components/Src/ssd1306_fonts.d ./Components/Src/ssd1306_fonts.o ./Components/Src/ssd1306_fonts.su ./Components/Src/ssd1306_tests.d ./Components/Src/ssd1306_tests.o ./Components/Src/ssd1306_tests.su
+	-$(RM) ./Components/Src/mcp9808.d ./Components/Src/mcp9808.o ./Components/Src/mcp9808.su ./Components/Src/ssd1306.d ./Components/Src/ssd1306.o ./Components/Src/ssd1306.su ./Components/Src/ssd1306_fonts.d ./Components/Src/ssd1306_fonts.o ./Components/Src/ssd1306_fonts.su ./Components/Src/ssd1306_tests.d ./Components/Src/ssd1306_tests.o ./Components/Src/ssd1306_tests.su
 
 .PHONY: clean-Components-2f-Src
 

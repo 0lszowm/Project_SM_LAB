@@ -1,6 +1,6 @@
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd_ex.o: \
- ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd_ex.c \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
+Components/Src/mcp9808.o: ../Components/Src/mcp9808.c \
+ D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/mcp9808.h \
+ ../Core/Inc/main.h ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
  ../Core/Inc/stm32f7xx_hal_conf.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_def.h \
@@ -29,10 +29,9 @@ Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd_ex.o: \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd.h \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usb.h \
- ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd_ex.h
+ ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h
+D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/mcp9808.h:
+../Core/Inc/main.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h:
 ../Core/Inc/stm32f7xx_hal_conf.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h:
@@ -63,6 +62,3 @@ Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd_ex.o: \
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h:
-../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd.h:
-../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_ll_usb.h:
-../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_pcd_ex.h:
