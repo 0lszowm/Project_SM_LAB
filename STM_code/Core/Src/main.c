@@ -18,12 +18,16 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "i2c.h"
+#include "tim.h"
 #include "usart.h"
 #include "usb_otg.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ssd1306.h"
+#include "ssd1306_tests.h"
 
 /* USER CODE END Includes */
 
@@ -44,17 +48,37 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t received_data[3];  // do tego będą sie odbierać dane z portu szeregowego
+char received_data[20];  // do tego będą sie odbierać dane z portu szeregowego
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+void wyswietlacz(){
+	uint8_t y = 0; // ktora linia wyswietlacza
+	ssd1306_Fill(Black);
+	ssd1306_SetCursor(2, y);
+	char buf[20] = "COM test: ";
+	ssd1306_WriteString(strcat(buf, received_data), Font_7x10, White);
+	y += 10;
 
+	ssd1306_UpdateScreen();
+}
+/*
+ * tu beda przerwania
+ */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	HAL_UART_Receive_IT(&huart3, received_data, 3); // Tu włącza sie to gowno znowu :)
 }
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+	if(htim->Instance == TIM2){ // If the interrupt is from timer 2
+		HAL_UART_Transmit(&huart3, received_data, strlen(received_data), 100);
+		//wyswietlacz();
+		//ssd1306_TestAll();
+	}
+
+}
 
 /* USER CODE END PFP */
 
@@ -93,16 +117,20 @@ int main(void)
   MX_GPIO_Init();
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
+  MX_I2C2_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+  ssd1306_TestAll();
+  //ssd1306_Init(); // Inicjalizacja wyświetlacza
+  HAL_TIM_Base_Start_IT(&htim2);
   HAL_UART_Receive_IT(&huart3, received_data, 3);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  HAL_UART_Transmit(&huart3, received_data, strlen(received_data), 100);
-	  HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
