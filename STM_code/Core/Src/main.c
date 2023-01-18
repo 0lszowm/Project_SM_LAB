@@ -48,12 +48,19 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-char received_data[20];  // do tego będą sie odbierać dane z portu szeregowego
+char received_data[3];  // do tego będą sie odbierać dane z portu szeregowego
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+/*
+ * tu beda przerwania
+ */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+	HAL_UART_Receive_IT(&huart3, received_data, 3); // Tu włącza sie to gowno znowu :)
+}
+
 void wyswietlacz(){
 	uint8_t y = 0; // ktora linia wyswietlacza
 	ssd1306_Fill(Black);
@@ -64,18 +71,16 @@ void wyswietlacz(){
 
 	ssd1306_UpdateScreen();
 }
-/*
- * tu beda przerwania
- */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-	HAL_UART_Receive_IT(&huart3, received_data, 3); // Tu włącza sie to gowno znowu :)
-}
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim->Instance == TIM2){ // If the interrupt is from timer 2
+		char jd[2] = "JD";
+		HAL_UART_Transmit(&huart3, jd, strlen(jd), 100);
 		HAL_UART_Transmit(&huart3, received_data, strlen(received_data), 100);
-		//wyswietlacz();
+	}
+	if(htim->Instance == TIM3){
 		//ssd1306_TestAll();
+		wyswietlacz();
 	}
 
 }
@@ -119,10 +124,12 @@ int main(void)
   MX_USB_OTG_FS_PCD_Init();
   MX_I2C2_Init();
   MX_TIM2_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  ssd1306_TestAll();
-  //ssd1306_Init(); // Inicjalizacja wyświetlacza
+  //ssd1306_TestAll();
+  ssd1306_Init(); // Inicjalizacja wyświetlacza
   HAL_TIM_Base_Start_IT(&htim2);
+  HAL_TIM_Base_Start_IT(&htim3);
   HAL_UART_Receive_IT(&huart3, received_data, 3);
 
   /* USER CODE END 2 */
