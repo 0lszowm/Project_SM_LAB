@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "i2c.h"
 #include "tim.h"
 #include "usart.h"
@@ -50,6 +51,8 @@
 /* USER CODE BEGIN PV */
 char received_data[3];  // do tego będą sie odbierać dane z portu szeregowego
 float current_temperature = 0.00;  // temperatura aktualna tu bedzie
+float value = 0.00; // to z zadajnika analogowego 0.0f-1.0f
+uint16_t duty_cycle = 0; // 0-1000 (multiplied x10 to get higher resolution)
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -60,6 +63,21 @@ void SystemClock_Config(void);
  */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	HAL_UART_Receive_IT(&huart3, received_data, 3); // Tu włącza sie to gowno znowu :)
+}
+
+float zadajnik() {
+	HAL_ADC_Start(&hadc1);
+	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+	uint32_t value = HAL_ADC_GetValue(&hadc1);
+	return 1.0f * value /4095.0f;
+}
+
+void change_duty_cycle(TIM_HandleTypeDef* htim, uint32_t channel, uint8_t duty_cycle)
+{
+    // calculate the new pulse value
+    uint32_t pulse = (htim->Init.Period * duty_cycle) / 1000;
+    // update the capture/compare register
+    __HAL_TIM_SET_COMPARE(htim, channel, pulse);
 }
 
 void wyswietlacz(){
@@ -77,14 +95,41 @@ void wyswietlacz(){
 	ssd1306_WriteString(strcat(buf0, temp_buf), Font_7x10, White);
 	y += 10;
 
+	char set_buf[6];
+	gcvt(value, 2, set_buf);
+	ssd1306_SetCursor(2, y);
+	char buf1[20] = "Set temp:";
+	ssd1306_WriteString(strcat(buf1, set_buf), Font_7x10, White);
+	y += 10;
+
+	float duty_cl = duty_cycle/10.0f;
+	char duty_buf[6];
+	gcvt(duty_cl, 3, duty_buf);
+	ssd1306_SetCursor(2, y);
+	char buf2[20] = "Current duty:";
+	ssd1306_WriteString(strcat(buf2, duty_buf), Font_7x10, White);
+	y += 10;
+
 	ssd1306_UpdateScreen();
+}
+
+void transmit_data(float current_temp, float set_temp){
+    char data_buf[100];
+    gcvt(current_temp, 6, data_buf);
+    strcat(data_buf, ";");
+    gcvt(set_temp, 6, data_buf+strlen(data_buf));
+    strcat(data_buf, "\r\n");
+    HAL_UART_Transmit(&huart3, data_buf, strlen(data_buf), 100);
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim->Instance == TIM2){ // If the interrupt is from timer 2
-		char jd[2] = "JD";
+		//char jd[2] = "JD";
 		//HAL_UART_Transmit(&huart3, jd, strlen(jd), 100);
-		HAL_UART_Transmit(&huart3, received_data, strlen(received_data), 100);
+		//HAL_UART_Transmit(&huart3, received_data, strlen(received_data), 100);
+		transmit_data(current_temperature, value);
+		change_duty_cycle(&htim1, TIM_CHANNEL_1, duty_cycle);
+
 	}
 	if(htim->Instance == TIM3){
 		//ssd1306_TestAll();
@@ -93,6 +138,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	}
 	if(htim->Instance == TIM4){
 		 MCP9808_MeasureTemperature(&current_temperature);
+		 value = zadajnik();
 	}
 
 }
@@ -138,6 +184,8 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_I2C4_Init();
+  MX_ADC1_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   //ssd1306_TestAll();
   ssd1306_Init(); // Inicjalizacja wyświetlacza
