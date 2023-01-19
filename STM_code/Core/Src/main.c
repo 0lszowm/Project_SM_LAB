@@ -53,7 +53,7 @@
 char received_data[3];  // do tego będą sie odbierać dane z portu szeregowego
 float current_temperature = 0.00;  // temperatura aktualna tu bedzie
 float value = 0.00; // to z zadajnika analogowego 0.0f-1.0f
-uint16_t duty_cycle = 0; // 0-1000 (multiplied x10 to get higher resolution)
+uint16_t duty_cycle = 523; // 0-1000 (multiplied x10 to get higher resolution)
 bool stan_przycisku;
 /* USER CODE END PV */
 
@@ -89,7 +89,7 @@ bool button_state() {
 void change_duty_cycle(TIM_HandleTypeDef* htim, uint32_t channel, uint16_t duty_cycle)
 {
     // calculate the new pulse value
-    uint32_t pulse = (htim->Init.Period * duty_cycle) / 1000;
+    uint32_t pulse = ((htim->Init.Period+1) * duty_cycle) / 1000;
     // update the capture/compare register
     __HAL_TIM_SET_COMPARE(htim, channel, pulse);
 }
