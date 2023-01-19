@@ -26,6 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stdbool.h"
 #include "ssd1306.h"
 #include "ssd1306_tests.h"
 #include "mcp9808.h"
@@ -53,6 +54,7 @@ char received_data[3];  // do tego będą sie odbierać dane z portu szeregowego
 float current_temperature = 0.00;  // temperatura aktualna tu bedzie
 float value = 0.00; // to z zadajnika analogowego 0.0f-1.0f
 uint16_t duty_cycle = 0; // 0-1000 (multiplied x10 to get higher resolution)
+bool stan_przycisku;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -64,7 +66,7 @@ void SystemClock_Config(void);
 
 // Z tym gównem też chyba jest coś nie tak
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-	HAL_UART_Receive_IT(&huart3, received_data, 3); // Tu włącza sie to gowno znowu :)
+	//HAL_UART_Receive_IT(&huart3, received_data, 3); // Tu włącza sie to gowno znowu :)
 }
 
 float zadajnik() {
@@ -72,6 +74,15 @@ float zadajnik() {
 	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 	uint32_t value = HAL_ADC_GetValue(&hadc1);
 	return 1.0f * value /4095.0f;
+}
+
+bool button_state() {
+	if(HAL_GPIO_ReadPin(przycisk0_GPIO_Port, przycisk0_Pin) == GPIO_PIN_SET){
+		return true;
+	}
+	else{
+		return false;
+	}
 }
 
 // Jakbym miał powiedzieć gdzie sie wypierdoli ten kod to wlasnie tutaj
@@ -105,6 +116,20 @@ void wyswietlacz(){
 	ssd1306_WriteString(strcat(buf1, set_buf), Font_7x10, White);
 	y += 10;
 
+	ssd1306_SetCursor(2, y);
+	char buf3[20] = "Przycisk: ";
+	if(stan_przycisku){
+		char buf4[2] = "ON";
+		ssd1306_WriteString(strcat(buf3, buf4), Font_7x10, White);
+	}
+	else{
+		char buf5[3] = "OFF";
+		ssd1306_WriteString(strcat(buf3, buf5), Font_7x10, White);
+	}
+	y += 10;
+
+
+
 	float duty_cl = duty_cycle/10.0f;
 	char duty_buf[6];
 	gcvt(duty_cl, 3, duty_buf);
@@ -133,11 +158,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	}
 	if(htim->Instance == TIM3){ // If the interrupt is from timer 3
 		//ssd1306_TestAll();
-		wyswietlacz();
+		HAL_UART_Receive_IT(&huart3, received_data, 3);
 	}
 	if(htim->Instance == TIM4){ // If the interrupt is from timer 4
-		 MCP9808_MeasureTemperature(&current_temperature);
-		 value = zadajnik();
+		MCP9808_MeasureTemperature(&current_temperature);
+		stan_przycisku = button_state();
+		value = zadajnik();
+		wyswietlacz();
 	}
 
 }
