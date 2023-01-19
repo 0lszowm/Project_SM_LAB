@@ -61,6 +61,8 @@ void SystemClock_Config(void);
 /*
  * tu beda przerwania
  */
+
+// Z tym gównem też chyba jest coś nie tak
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	HAL_UART_Receive_IT(&huart3, received_data, 3); // Tu włącza sie to gowno znowu :)
 }
@@ -72,7 +74,8 @@ float zadajnik() {
 	return 1.0f * value /4095.0f;
 }
 
-void change_duty_cycle(TIM_HandleTypeDef* htim, uint32_t channel, uint8_t duty_cycle)
+// Jakbym miał powiedzieć gdzie sie wypierdoli ten kod to wlasnie tutaj
+void change_duty_cycle(TIM_HandleTypeDef* htim, uint32_t channel, uint16_t duty_cycle)
 {
     // calculate the new pulse value
     uint32_t pulse = (htim->Init.Period * duty_cycle) / 1000;
@@ -124,19 +127,15 @@ void transmit_data(float current_temp, float set_temp){
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim->Instance == TIM2){ // If the interrupt is from timer 2
-		//char jd[2] = "JD";
-		//HAL_UART_Transmit(&huart3, jd, strlen(jd), 100);
-		//HAL_UART_Transmit(&huart3, received_data, strlen(received_data), 100);
 		transmit_data(current_temperature, value);
 		change_duty_cycle(&htim1, TIM_CHANNEL_1, duty_cycle);
 
 	}
-	if(htim->Instance == TIM3){
+	if(htim->Instance == TIM3){ // If the interrupt is from timer 3
 		//ssd1306_TestAll();
-		//MCP9808_MeasureTemperature(&current_temperature);
 		wyswietlacz();
 	}
-	if(htim->Instance == TIM4){
+	if(htim->Instance == TIM4){ // If the interrupt is from timer 4
 		 MCP9808_MeasureTemperature(&current_temperature);
 		 value = zadajnik();
 	}
@@ -189,16 +188,15 @@ int main(void)
   /* USER CODE BEGIN 2 */
   //ssd1306_TestAll();
   ssd1306_Init(); // Inicjalizacja wyświetlacza
-  HAL_TIM_Base_Start_IT(&htim2);
-  HAL_TIM_Base_Start_IT(&htim3);
-  HAL_TIM_Base_Start_IT(&htim4);
-  HAL_UART_Receive_IT(&huart3, received_data, 3);
   MCP9808_Init(&hi2c4, 0x18); // inicjalizacja sensora temperatury
   MCP9808_SetResolution(MCP9808_Medium_Res);  // tutaj nastawia się srednia rozdzielczość
 
+  HAL_UART_Receive_IT(&huart3, received_data, 3);
 
-
-
+// te niżej najlepiej jak beda na koncu // tak powiedzial szef
+  HAL_TIM_Base_Start_IT(&htim2);
+  HAL_TIM_Base_Start_IT(&htim3);
+  HAL_TIM_Base_Start_IT(&htim4);
   /* USER CODE END 2 */
 
   /* Infinite loop */

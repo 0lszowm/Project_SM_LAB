@@ -1,5 +1,5 @@
 Components/Src/mcp9808.o: ../Components/Src/mcp9808.c \
- D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/mcp9808.h \
+ D:/SM_project/Project_SM_LAB/STM_code/Components/Inc/mcp9808.h \
  ../Core/Inc/main.h ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h \
  ../Core/Inc/stm32f7xx_hal_conf.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_rcc.h \
@@ -32,7 +32,7 @@ Components/Src/mcp9808.o: ../Components/Src/mcp9808.c \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h
-D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/mcp9808.h:
+D:/SM_project/Project_SM_LAB/STM_code/Components/Inc/mcp9808.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h:
 ../Core/Inc/stm32f7xx_hal_conf.h:

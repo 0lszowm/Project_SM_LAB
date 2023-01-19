@@ -33,11 +33,11 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
  ../Core/Inc/adc.h ../Core/Inc/main.h ../Core/Inc/i2c.h ../Core/Inc/tim.h \
  ../Core/Inc/usart.h ../Core/Inc/gpio.h \
- D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/ssd1306.h \
- D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/ssd1306_conf.h \
- D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/ssd1306_fonts.h \
- D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/ssd1306_tests.h \
- D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/mcp9808.h
+ D:/SM_project/Project_SM_LAB/STM_code/Components/Inc/ssd1306.h \
+ D:/SM_project/Project_SM_LAB/STM_code/Components/Inc/ssd1306_conf.h \
+ D:/SM_project/Project_SM_LAB/STM_code/Components/Inc/ssd1306_fonts.h \
+ D:/SM_project/Project_SM_LAB/STM_code/Components/Inc/ssd1306_tests.h \
+ D:/SM_project/Project_SM_LAB/STM_code/Components/Inc/mcp9808.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h:
 ../Core/Inc/stm32f7xx_hal_conf.h:
@@ -77,8 +77,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Core/Inc/tim.h:
 ../Core/Inc/usart.h:
 ../Core/Inc/gpio.h:
-D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/ssd1306.h:
-D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/ssd1306_conf.h:
-D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/ssd1306_fonts.h:
-D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/ssd1306_tests.h:
-D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/mcp9808.h:
+D:/SM_project/Project_SM_LAB/STM_code/Components/Inc/ssd1306.h:
+D:/SM_project/Project_SM_LAB/STM_code/Components/Inc/ssd1306_conf.h:
+D:/SM_project/Project_SM_LAB/STM_code/Components/Inc/ssd1306_fonts.h:
+D:/SM_project/Project_SM_LAB/STM_code/Components/Inc/ssd1306_tests.h:
+D:/SM_project/Project_SM_LAB/STM_code/Components/Inc/mcp9808.h:
