@@ -53,7 +53,7 @@
 char received_data[3];  // do tego będą sie odbierać dane z portu szeregowego
 float current_temperature = 0.00;  // temperatura aktualna tu bedzie
 float value = 0.00; // to z zadajnika analogowego 0.0f-1.0f
-uint16_t duty_cycle = 523; // 0-1000 (multiplied x10 to get higher resolution)
+uint16_t duty_cycle = 0; // 0-1000 (multiplied x10 to get higher resolution)
 bool stan_przycisku;
 /* USER CODE END PV */
 
@@ -151,16 +151,20 @@ void transmit_data(float current_temp, float set_temp){
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
-	if(htim->Instance == TIM2){ // If the interrupt is from timer 2
+	if(htim->Instance == TIM2){ // If the interrupt is from timer 2 - 10Hz
 		transmit_data(current_temperature, value);
-		change_duty_cycle(&htim1, TIM_CHANNEL_1, duty_cycle);
+		if(stan_przycisku){
+			change_duty_cycle(&htim1, TIM_CHANNEL_1, duty_cycle);
+		}
+		else{
 
+		}
 	}
-	if(htim->Instance == TIM3){ // If the interrupt is from timer 3
+	if(htim->Instance == TIM3){ // If the interrupt is from timer 3 - 2Hz
 		//ssd1306_TestAll();
 		HAL_UART_Receive_IT(&huart3, received_data, 3);
 	}
-	if(htim->Instance == TIM4){ // If the interrupt is from timer 4
+	if(htim->Instance == TIM4){ // If the interrupt is from timer 4 - 8Hz
 		MCP9808_MeasureTemperature(&current_temperature);
 		stan_przycisku = button_state();
 		value = zadajnik();
@@ -216,9 +220,10 @@ int main(void)
   //ssd1306_TestAll();
   ssd1306_Init(); // Inicjalizacja wyświetlacza
   MCP9808_Init(&hi2c4, 0x18); // inicjalizacja sensora temperatury
-  MCP9808_SetResolution(MCP9808_Medium_Res);  // tutaj nastawia się srednia rozdzielczość
+  MCP9808_SetResolution(MCP9808_High_Res);  // tutaj nastawia się wysoka rozdzielczość 0.125 (130 ms)
 
   HAL_UART_Receive_IT(&huart3, received_data, 3);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 
 // te niżej najlepiej jak beda na koncu // tak powiedzial szef
   HAL_TIM_Base_Start_IT(&htim2);
