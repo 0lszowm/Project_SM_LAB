@@ -37,7 +37,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/ssd1306_conf.h \
  D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/ssd1306_fonts.h \
  D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/ssd1306_tests.h \
- D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/mcp9808.h
+ D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/mcp9808.h \
+ ../Core/Inc/pid.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h:
 ../Core/Inc/stm32f7xx_hal_conf.h:
@@ -82,3 +83,4 @@ D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/ssd1306_conf.h:
 D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/ssd1306_fonts.h:
 D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/ssd1306_tests.h:
 D:/Project_SM_LAB/Project_SM_LAB/STM_code/Components/Inc/mcp9808.h:
+../Core/Inc/pid.h:
