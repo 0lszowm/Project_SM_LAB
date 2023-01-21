@@ -50,13 +50,13 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-char received_data[3];  // do tego będą sie odbierać dane z portu szeregowego
+char received_data[4];  // do tego będą sie odbierać dane z portu szeregowego
 float current_temperature = 0.00;  // temperatura aktualna tu bedzie
 float value = 0.00; // to z zadajnika analogowego 0.0f-1.0f
 uint16_t duty_cycle = 0; // 0-1000 (multiplied x10 to get higher resolution)
 bool stan_przycisku;
 uint16_t sterowanie = 0;
-float zadane = 40.0;
+float zadane = 50.0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -132,7 +132,7 @@ void wyswietlacz(){
 
 
 
-	float duty_cl = duty_cycle/10.0f;
+	float duty_cl = sterowanie/10.0f;
 	char duty_buf[6];
 	gcvt(duty_cl, 3, duty_buf);
 	ssd1306_SetCursor(2, y);
@@ -145,9 +145,10 @@ void wyswietlacz(){
 
 void transmit_data(float current_temp, float set_temp){
     char data_buf[100];
-    gcvt(current_temp, 6, data_buf);
-    strcat(data_buf, ";");
-    gcvt(set_temp, 6, data_buf+strlen(data_buf));
+    gcvt(current_temp, 6, data_buf); // convertuje float na string
+    strcat(data_buf, ";"); // dodaje srednik
+    //gcvt(set_temp, 6, data_buf+strlen(data_buf)); // dodaje set_temp do stringa
+    gcvt(sterowanie/1.0f, 6, data_buf+strlen(data_buf));
     strcat(data_buf, "\r\n");
     HAL_UART_Transmit(&huart3, data_buf, strlen(data_buf), 100);
 }
@@ -155,18 +156,10 @@ void transmit_data(float current_temp, float set_temp){
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim->Instance == TIM2){ // If the interrupt is from timer 2 - 10Hz
 		transmit_data(current_temperature, value);
-		if(stan_przycisku){
-			//sterowanie = pid_calculate(zadane, current_temperature); // te tutej pod testowanie pwm-a sa
-			//change_duty_cycle(&htim1, TIM_CHANNEL_1, sterowanie); // te tutej są do testowania pwm-a
-			change_duty_cycle(&htim1, TIM_CHANNEL_1, duty_cycle);
-		}
-		else{
-
-		}
 	}
 	if(htim->Instance == TIM3){ // If the interrupt is from timer 3 - 2Hz
 		//ssd1306_TestAll();
-		HAL_UART_Receive_IT(&huart3, received_data, 3);
+		HAL_UART_Receive_IT(&huart3, received_data, 4);
 	}
 	if(htim->Instance == TIM4){ // If the interrupt is from timer 4 - 8Hz
 		MCP9808_MeasureTemperature(&current_temperature);
@@ -174,6 +167,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		value = zadajnik();
 		wyswietlacz();
 	}
+	if(htim->Instance == TIM12){ // If the interrupt is from timer 2 - 1kHz
+			if(stan_przycisku){
+				sterowanie = pid_calculate(zadane, current_temperature); // te tutej pod testowanie pwm-a sa
+				//sterowanie = 500;
+			}
+			else{
+				sterowanie = 0;
+			}
+			change_duty_cycle(&htim1, TIM_CHANNEL_1, sterowanie);
+		}
 
 }
 
@@ -220,20 +223,23 @@ int main(void)
   MX_I2C4_Init();
   MX_ADC1_Init();
   MX_TIM1_Init();
+  MX_TIM8_Init();
+  MX_TIM12_Init();
   /* USER CODE BEGIN 2 */
   //ssd1306_TestAll();
   ssd1306_Init(); // Inicjalizacja wyświetlacza
   MCP9808_Init(&hi2c4, 0x18); // inicjalizacja sensora temperatury
   MCP9808_SetResolution(MCP9808_High_Res);  // tutaj nastawia się wysoka rozdzielczość 0.125 (130 ms)
-  //pid_init(10, 0.35, 8);  // tutaj testowalem pwm
+  pid_init(55, 0.067, 0);  // tutaj testowalem pwm
 
-  HAL_UART_Receive_IT(&huart3, received_data, 3);
+  HAL_UART_Receive_IT(&huart3, received_data, 4);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 
 // te niżej najlepiej jak beda na koncu // tak powiedzial szef
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_Base_Start_IT(&htim3);
   HAL_TIM_Base_Start_IT(&htim4);
+  HAL_TIM_Base_Start_IT(&htim12);
   /* USER CODE END 2 */
 
   /* Infinite loop */
