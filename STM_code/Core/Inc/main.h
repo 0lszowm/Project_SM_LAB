@@ -87,6 +87,8 @@ void Error_Handler(void);
 #define USB_PowerSwitchOn_GPIO_Port GPIOG
 #define USB_OverCurrent_Pin GPIO_PIN_7
 #define USB_OverCurrent_GPIO_Port GPIOG
+#define przycisk1_Pin GPIO_PIN_8
+#define przycisk1_GPIO_Port GPIOC
 #define przycisk0_Pin GPIO_PIN_9
 #define przycisk0_GPIO_Port GPIOC
 #define USB_SOF_Pin GPIO_PIN_8
@@ -103,6 +105,8 @@ void Error_Handler(void);
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
+#define wentylator_Pin GPIO_PIN_10
+#define wentylator_GPIO_Port GPIOC
 #define RMII_TX_EN_Pin GPIO_PIN_11
 #define RMII_TX_EN_GPIO_Port GPIOG
 #define RMII_TXD0_Pin GPIO_PIN_13

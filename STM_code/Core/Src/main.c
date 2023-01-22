@@ -53,12 +53,11 @@
 
 /* USER CODE BEGIN PV */
 char received_data[4];  // do tego będą sie odbierać dane z portu szeregowego
-float current_temperature = 0.00;  // temperatura aktualna tu bedzie
+float akutalna_temperatura = 0.00;  // temperatura aktualna tu bedzie
 float value = 0.00; // to z zadajnika analogowego 0.0f-1.0f
-uint16_t duty_cycle = 0; // 0-1000 (multiplied x10 to get higher resolution)
-bool stan_przycisku;
+uint16_t current_duty_cycle = 0; // 0-1000 (multiplied x10 to get higher resolution)
 uint16_t sterowanie = 0;
-float zadane = 0;
+float zadana_temperatura = 0;
 float kp = 55;
 float ki = 0.08;
 float kd = 0;
@@ -67,25 +66,8 @@ float kd = 0;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-/*
- * tu beda przerwania
- */
 
-// Z tym gównem też chyba jest coś nie tak
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-	//HAL_UART_Receive_IT(&huart3, received_data, 3); // Tu włącza sie to gowno znowu :)
-	zadane = atof(received_data);
-	//HAL_Delay(300);
-}
-
-float zadajnik() {
-	HAL_ADC_Start(&hadc1);
-	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-	uint32_t value = HAL_ADC_GetValue(&hadc1);
-	return 1.0f * value /4095.0f;
-}
-
-bool button_state() {
+bool grzanie_on_off() {
 	if(HAL_GPIO_ReadPin(przycisk0_GPIO_Port, przycisk0_Pin) == GPIO_PIN_SET){
 		return true;
 	}
@@ -94,58 +76,106 @@ bool button_state() {
 	}
 }
 
+bool auto_manual_on_off() {
+	if(HAL_GPIO_ReadPin(przycisk1_GPIO_Port, przycisk1_Pin) == GPIO_PIN_SET){
+		return true;
+	}
+	else{
+		return false;
+	}
+}
+
+// Z tym gównem też chyba jest coś nie tak
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+	//HAL_UART_Receive_IT(&huart3, received_data, 3); // Tu włącza sie to gowno znowu :)
+	if(auto_manual_on_off()){
+		if(atof(received_data)>50){
+			zadana_temperatura = 50;
+		}
+		else if(atof(received_data)<20){
+			zadana_temperatura = 20;
+		}
+		else{
+			zadana_temperatura = atof(received_data);
+		}
+	}
+}
+
+float zadajnik() {
+	HAL_ADC_Start(&hadc1);
+	HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+	uint32_t value = HAL_ADC_GetValue(&hadc1);
+	float ser = (1.0f * value /4095.0f)*30+20;
+	return ser;
+}
+
+void wentyl(){
+	float blad = zadana_temperatura - akutalna_temperatura;
+	float hist = -0.5;
+	if (blad<=hist){
+		HAL_GPIO_WritePin(wentylator_GPIO_Port, wentylator_Pin, GPIO_PIN_SET);
+	}
+	if (blad>-0.125){
+		HAL_GPIO_WritePin(wentylator_GPIO_Port, wentylator_Pin, GPIO_PIN_RESET);
+	}
+}
+
 // Jakbym miał powiedzieć gdzie sie wypierdoli ten kod to wlasnie tutaj
-void change_duty_cycle(TIM_HandleTypeDef* htim, uint32_t channel, uint16_t duty_cycle)
+void change_current_duty_cycle(TIM_HandleTypeDef* htim, uint32_t channel, uint16_t current_duty_cycle)
 {
     // calculate the new pulse value
-    uint32_t pulse = ((htim->Init.Period+1) * duty_cycle) / 1000;
+    uint32_t pulse = ((htim->Init.Period+1) * current_duty_cycle) / 1000;
     // update the capture/compare register
     __HAL_TIM_SET_COMPARE(htim, channel, pulse);
 }
 
 void wyswietlacz(){
-	uint8_t y = 0; // ktora linia wyswietlacza
 	ssd1306_Fill(Black);
-	ssd1306_SetCursor(2, y);
-	char buf[20] = "COM test: ";
-	ssd1306_WriteString(strcat(buf, received_data), Font_7x10, White);
-	y += 10;
+	uint8_t y = 0; // ktora linia wyswietlacza
 
 	char temp_buf[6];
-	gcvt(current_temperature, 6, temp_buf);
+	gcvt(akutalna_temperatura, 6, temp_buf);
 	ssd1306_SetCursor(2, y);
-	char buf0[20] = "Current temp:";
+	char buf0[20] = "Temperatura:";
 	ssd1306_WriteString(strcat(buf0, temp_buf), Font_7x10, White);
 	y += 10;
 
 	char set_buf[6];
-	gcvt(zadane, 4, set_buf);
+	gcvt(zadana_temperatura, 4, set_buf);
 	ssd1306_SetCursor(2, y);
-	char buf1[20] = "Set temp:";
+	char buf1[20] = "Nastawa:";
 	ssd1306_WriteString(strcat(buf1, set_buf), Font_7x10, White);
 	y += 10;
-
-	ssd1306_SetCursor(2, y);
-	char buf3[20] = "Przycisk: ";
-	if(stan_przycisku){
-		char buf4[2] = "ON";
-		ssd1306_WriteString(strcat(buf3, buf4), Font_7x10, White);
-	}
-	else{
-		char buf5[3] = "OFF";
-		ssd1306_WriteString(strcat(buf3, buf5), Font_7x10, White);
-	}
-	y += 10;
-
-
 
 	float duty_cl = sterowanie/10.0f;
 	char duty_buf[6];
 	gcvt(duty_cl, 3, duty_buf);
 	ssd1306_SetCursor(2, y);
-	char buf2[20] = "Current duty:";
-	ssd1306_WriteString(strcat(buf2, duty_buf), Font_7x10, White);
+	char buf2[20] = "PWM: ";
+	strcat(buf2, duty_buf);
+	ssd1306_WriteString(strcat(buf2, "%"), Font_7x10, White);
 	y += 10;
+
+	ssd1306_SetCursor(2, y);
+	char buf3[20] = "Dziala: ";
+	if(grzanie_on_off()){
+		ssd1306_WriteString(strcat(buf3, "TAK"), Font_7x10, White);
+	}
+	else{
+		ssd1306_WriteString(strcat(buf3, "NIE"), Font_7x10, White);
+	}
+	y += 10;
+
+	ssd1306_SetCursor(2, y);
+		char buf6[20] = "Tryb: ";
+		if(auto_manual_on_off()){
+			ssd1306_WriteString(strcat(buf6, "AUTOMAT"), Font_7x10, White);
+		}
+		else{
+			ssd1306_WriteString(strcat(buf6, "MANUAL"), Font_7x10, White);
+		}
+		y += 10;
+
 
 	ssd1306_UpdateScreen();
 }
@@ -162,27 +192,30 @@ void transmit_data(float current_temp, float set_temp){
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim->Instance == TIM2){ // If the interrupt is from timer 2 - 10Hz
-		transmit_data(current_temperature, value);
-		duty_cycle = sterowanie;
+		transmit_data(akutalna_temperatura, value);
+		current_duty_cycle = sterowanie;
 	}
 	if(htim->Instance == TIM3){ // If the interrupt is from timer 3 - 2Hz
 		//ssd1306_TestAll();
 		HAL_UART_Receive_IT(&huart3, received_data, 4);
 	}
 	if(htim->Instance == TIM4){ // If the interrupt is from timer 4 - 8Hz
-		MCP9808_MeasureTemperature(&current_temperature);
-		stan_przycisku = button_state();
-		value = zadajnik();
+		MCP9808_MeasureTemperature(&akutalna_temperatura);
+		if(auto_manual_on_off()==false){
+			zadana_temperatura = round(zadajnik());
+		}
 		wyswietlacz();
 	}
 	if(htim->Instance == TIM12){ // If the interrupt is from timer 12 - ~83.3kHz
-			if(stan_przycisku){
-				sterowanie = pid_calculate(zadane, current_temperature); // te tutej pod testowanie pwm-a sa
+			if(grzanie_on_off()){
+				sterowanie = pid_calculate(zadana_temperatura, akutalna_temperatura);
+				wentyl();
 			}
 			else{
 				sterowanie = 0;
+				wentyl();
 			}
-			change_duty_cycle(&htim1, TIM_CHANNEL_1, sterowanie);
+			change_current_duty_cycle(&htim1, TIM_CHANNEL_1, sterowanie);
 		}
 
 }
