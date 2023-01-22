@@ -11,6 +11,7 @@
 //#include "platform_specific.h"
 #include <math.h>
 #include <stdint.h>
+#include "stdbool.h"
 
 void pid_init(float kp, float ki, float kd);
 

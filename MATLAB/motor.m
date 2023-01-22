@@ -3,12 +3,12 @@ clear;
 %import danych z pliku
 file_data = importdata('temp.txt');
 temp = file_data;
-y0 = 15;
+y0 = 23.375;
 start_step = 35;
 step_mult = 500;
 max = 5000;
 kp = 55;
-ki = 0.068;
+ki = 0.08;
 temp = temp-y0;
 file_data = importdata('sterowanie.txt');
 set_val = file_data;

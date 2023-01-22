@@ -31,6 +31,8 @@
 #include "ssd1306_tests.h"
 #include "mcp9808.h"
 #include "pid.h"
+#include <stdio.h>
+#include <stdlib.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,7 +58,10 @@ float value = 0.00; // to z zadajnika analogowego 0.0f-1.0f
 uint16_t duty_cycle = 0; // 0-1000 (multiplied x10 to get higher resolution)
 bool stan_przycisku;
 uint16_t sterowanie = 0;
-float zadane = 50.0;
+float zadane = 0;
+float kp = 55;
+float ki = 0.08;
+float kd = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,6 +74,8 @@ void SystemClock_Config(void);
 // Z tym gównem też chyba jest coś nie tak
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 	//HAL_UART_Receive_IT(&huart3, received_data, 3); // Tu włącza sie to gowno znowu :)
+	zadane = atof(received_data);
+	//HAL_Delay(300);
 }
 
 float zadajnik() {
@@ -112,7 +119,7 @@ void wyswietlacz(){
 	y += 10;
 
 	char set_buf[6];
-	gcvt(value, 2, set_buf);
+	gcvt(zadane, 4, set_buf);
 	ssd1306_SetCursor(2, y);
 	char buf1[20] = "Set temp:";
 	ssd1306_WriteString(strcat(buf1, set_buf), Font_7x10, White);
@@ -156,6 +163,7 @@ void transmit_data(float current_temp, float set_temp){
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim->Instance == TIM2){ // If the interrupt is from timer 2 - 10Hz
 		transmit_data(current_temperature, value);
+		duty_cycle = sterowanie;
 	}
 	if(htim->Instance == TIM3){ // If the interrupt is from timer 3 - 2Hz
 		//ssd1306_TestAll();
@@ -167,10 +175,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		value = zadajnik();
 		wyswietlacz();
 	}
-	if(htim->Instance == TIM12){ // If the interrupt is from timer 2 - 1kHz
+	if(htim->Instance == TIM12){ // If the interrupt is from timer 12 - ~83.3kHz
 			if(stan_przycisku){
 				sterowanie = pid_calculate(zadane, current_temperature); // te tutej pod testowanie pwm-a sa
-				//sterowanie = 500;
 			}
 			else{
 				sterowanie = 0;
@@ -229,8 +236,9 @@ int main(void)
   //ssd1306_TestAll();
   ssd1306_Init(); // Inicjalizacja wyświetlacza
   MCP9808_Init(&hi2c4, 0x18); // inicjalizacja sensora temperatury
-  MCP9808_SetResolution(MCP9808_High_Res);  // tutaj nastawia się wysoka rozdzielczość 0.125 (130 ms)
-  pid_init(55, 0.067, 0);  // tutaj testowalem pwm
+  // Tutej nastawiają się dokładności czujnika temperatury :))))
+  MCP9808_SetResolution(MCP9808_High_Res);  ///> High 0.125 (130 ms)
+  pid_init(kp, ki, kd);  // tutaj inicjalizuje i nastawia się wartości PID
 
   HAL_UART_Receive_IT(&huart3, received_data, 4);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
