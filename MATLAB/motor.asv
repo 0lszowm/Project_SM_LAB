@@ -1,17 +1,16 @@
 clc;
 clear;
 %import danych z pliku
-file_data = importdata('temp1.txt');
+file_data = importdata('temp.txt');
 temp = file_data;
-y0 = 25;
-start_step = 80;
+y0 = 24.875;
+start_step = 35;
 step_mult = 500;
 max = 5000;
 kp = 55;
 ki = 0.08;
-zad = 50;
 temp = temp-y0;
-file_data = importdata('sterowanie1.txt');
+file_data = importdata('sterowanie.txt');
 set_val = file_data;
 
 %estymacja transmitancji obiektu

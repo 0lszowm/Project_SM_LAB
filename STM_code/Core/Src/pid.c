@@ -8,7 +8,7 @@
 
 #include <pid.h>
 
-#define ERR_SUM_MAX		5000
+#define ERR_SUM_MAX		2500
 
 struct pid_params
 {
@@ -51,8 +51,8 @@ uint16_t pid_calculate(float set_val, float read_val)
 	u = pid_params.kp * pid_params.err + pid_params.ki * pid_params.err_sum
 			+ pid_params.kd * err_d;
 	u_ext = round(u);
-	if(u_ext>1000){
-		u_ext = 1000;
+	if(u_ext>500){
+		u_ext = 500;
 	}
 	else if(u_ext<0){
 		u_ext = 0;

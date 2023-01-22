@@ -58,8 +58,8 @@ float value = 0.00; // to z zadajnika analogowego 0.0f-1.0f
 uint16_t current_duty_cycle = 0; // 0-1000 (multiplied x10 to get higher resolution)
 uint16_t sterowanie = 0;
 float zadana_temperatura = 0;
-float kp = 55;
-float ki = 0.08;
+float kp = 24;
+float ki = 0.092;
 float kd = 0;
 /* USER CODE END PV */
 
@@ -111,11 +111,11 @@ float zadajnik() {
 
 void wentyl(){
 	float blad = zadana_temperatura - akutalna_temperatura;
-	float hist = -0.5;
+	float hist = -1;
 	if (blad<=hist){
 		HAL_GPIO_WritePin(wentylator_GPIO_Port, wentylator_Pin, GPIO_PIN_SET);
 	}
-	if (blad>-0.125){
+	if (blad>=0){
 		HAL_GPIO_WritePin(wentylator_GPIO_Port, wentylator_Pin, GPIO_PIN_RESET);
 	}
 }
@@ -209,6 +209,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim->Instance == TIM12){ // If the interrupt is from timer 12 - ~83.3kHz
 			if(grzanie_on_off()){
 				sterowanie = pid_calculate(zadana_temperatura, akutalna_temperatura);
+				//sterowanie = 500;
 				wentyl();
 			}
 			else{
