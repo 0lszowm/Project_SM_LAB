@@ -42,8 +42,8 @@ uint16_t pid_calculate(float set_val, float read_val)
 
 	if (pid_params.err_sum > ERR_SUM_MAX) {
 		pid_params.err_sum = ERR_SUM_MAX;
-	} else if (pid_params.err_sum < -ERR_SUM_MAX) {
-		pid_params.err_sum = -ERR_SUM_MAX;
+	} else if (pid_params.err_sum < 0) {
+		pid_params.err_sum = 0;
 	}
 
 	err_d = pid_params.err_last - pid_params.err;

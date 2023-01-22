@@ -59,7 +59,7 @@ uint16_t current_duty_cycle = 0; // 0-1000 (multiplied x10 to get higher resolut
 uint16_t sterowanie = 0;
 float zadana_temperatura = 0;
 float kp = 24;
-float ki = 0.092;
+float ki = 0.09;
 float kd = 0;
 /* USER CODE END PV */
 
@@ -111,7 +111,7 @@ float zadajnik() {
 
 void wentyl(){
 	float blad = zadana_temperatura - akutalna_temperatura;
-	float hist = -1;
+	float hist = -0.5;
 	if (blad<=hist){
 		HAL_GPIO_WritePin(wentylator_GPIO_Port, wentylator_Pin, GPIO_PIN_SET);
 	}
