@@ -56,12 +56,12 @@ char received_data[4];  // do tego będą sie odbierać dane z portu szeregowego
 float akutalna_temperatura = 0.00;  // temperatura aktualna tu bedzie
 float value = 0.00; // to z zadajnika analogowego 0.0f-1.0f
 uint16_t current_duty_cycle = 0; // 0-1000 (multiplied x10 to get higher resolution)
-uint16_t sterowanie = 0;
+uint16_t sterowanie = 0; // 0-1000 (multiplied x10 to get higher resolution)
 float zadana_temperatura = 0;
 
 // zmienne do PID
 float kp = 40.0f;
-float ki = 0.1f;
+float ki = 0.05f;
 float kd = 0.0f;
 float aktualny_blad=0;	// offset
 arm_pid_instance_f32 pid;
@@ -71,6 +71,24 @@ arm_pid_instance_f32 pid;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+
+void nastawy_pid_cmsis(arm_pid_instance_f32 * S){
+	// dopisuje to bo nie nastawia sie domyslnie
+	// na podstawie 5837-5839 z pliku arm_math.h
+	S->A0 = S->Kp + S->Ki + S->Kd;
+	S->A1 = (-(S->Kp)-(2*S->Kd));
+	S->A2 = S->Kd;
+}
+
+void ograniczenie_sygnału_cmsis(arm_pid_instance_f32 * S){
+	// tutaj se napisałem taki prowizoryczny anti-windup :)
+	if(S->state[2]>500){
+		S->state[2] = 500;
+	}
+	if(S->state[2]<0){
+	    S->state[2] = 0;
+	}
+}
 
 bool grzanie_on_off() {
 	if(HAL_GPIO_ReadPin(przycisk0_GPIO_Port, przycisk0_Pin) == GPIO_PIN_SET){
@@ -104,6 +122,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 			zadana_temperatura = atof(received_data);
 		}
 		arm_pid_reset_f32(&pid);
+		nastawy_pid_cmsis(&pid);
 	}
 }
 
@@ -198,19 +217,29 @@ void transmit_data(float current_temp){
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim->Instance == TIM2){ // If the interrupt is from timer 2 - 10Hz
-		transmit_data(akutalna_temperatura);
 		current_duty_cycle = sterowanie;
+		transmit_data(akutalna_temperatura);
 		aktualny_blad = (zadana_temperatura-akutalna_temperatura);
 		if(grzanie_on_off()){
-				//sterowanie = 500;
+			//sterowanie = 500;
+			if(aktualny_blad>-4){
 				sterowanie = round(arm_pid_f32(&pid, aktualny_blad));
-				wentyl();
+				if(sterowanie>500){
+					sterowanie = 500;
+				}
+				if(sterowanie<0){
+					sterowanie = 0;
+				}
+				ograniczenie_sygnału_cmsis(&pid);
 			}
-			else{
-				arm_pid_reset_f32(&pid);
-				sterowanie = 0;
-				wentyl();
-			}
+			wentyl();
+		}
+		else{
+			arm_pid_reset_f32(&pid);
+			nastawy_pid_cmsis(&pid);
+			sterowanie = 0;
+			wentyl();
+		}
 		change_current_duty_cycle(&htim1, TIM_CHANNEL_1, sterowanie);
 	}
 	if(htim->Instance == TIM3){ // If the interrupt is from timer 3 - 2Hz
@@ -280,6 +309,7 @@ int main(void)
   pid.Kp=kp;
   pid.Kd=kd;
   pid.Ki=ki;
+  nastawy_pid_cmsis(&pid);
 
   HAL_UART_Receive_IT(&huart3, received_data, 4);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
