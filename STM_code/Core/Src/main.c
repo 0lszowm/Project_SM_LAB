@@ -30,9 +30,9 @@
 #include "ssd1306.h"
 #include "ssd1306_tests.h"
 #include "mcp9808.h"
-#include "pid.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "arm_math.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,9 +58,14 @@ float value = 0.00; // to z zadajnika analogowego 0.0f-1.0f
 uint16_t current_duty_cycle = 0; // 0-1000 (multiplied x10 to get higher resolution)
 uint16_t sterowanie = 0;
 float zadana_temperatura = 0;
-float kp = 24;
-float ki = 0.09;
-float kd = 0;
+
+// zmienne do PID
+float kp = 40.0f;
+float ki = 0.1f;
+float kd = 0.0f;
+float aktualny_blad=0;	// offset
+arm_pid_instance_f32 pid;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -98,6 +103,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 		else{
 			zadana_temperatura = atof(received_data);
 		}
+		arm_pid_reset_f32(&pid);
 	}
 }
 
@@ -111,7 +117,7 @@ float zadajnik() {
 
 void wentyl(){
 	float blad = zadana_temperatura - akutalna_temperatura;
-	float hist = -0.5;
+	float hist = -5;
 	if (blad<=hist){
 		HAL_GPIO_WritePin(wentylator_GPIO_Port, wentylator_Pin, GPIO_PIN_SET);
 	}
@@ -180,7 +186,7 @@ void wyswietlacz(){
 	ssd1306_UpdateScreen();
 }
 
-void transmit_data(float current_temp, float set_temp){
+void transmit_data(float current_temp){
     char data_buf[100];
     gcvt(current_temp, 6, data_buf); // convertuje float na string
     strcat(data_buf, ";"); // dodaje srednik
@@ -192,8 +198,20 @@ void transmit_data(float current_temp, float set_temp){
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim->Instance == TIM2){ // If the interrupt is from timer 2 - 10Hz
-		transmit_data(akutalna_temperatura, value);
+		transmit_data(akutalna_temperatura);
 		current_duty_cycle = sterowanie;
+		aktualny_blad = (zadana_temperatura-akutalna_temperatura);
+		if(grzanie_on_off()){
+				//sterowanie = 500;
+				sterowanie = round(arm_pid_f32(&pid, aktualny_blad));
+				wentyl();
+			}
+			else{
+				arm_pid_reset_f32(&pid);
+				sterowanie = 0;
+				wentyl();
+			}
+		change_current_duty_cycle(&htim1, TIM_CHANNEL_1, sterowanie);
 	}
 	if(htim->Instance == TIM3){ // If the interrupt is from timer 3 - 2Hz
 		//ssd1306_TestAll();
@@ -206,19 +224,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		}
 		wyswietlacz();
 	}
-	if(htim->Instance == TIM12){ // If the interrupt is from timer 12 - ~83.3kHz
-			if(grzanie_on_off()){
-				sterowanie = pid_calculate(zadana_temperatura, akutalna_temperatura);
-				//sterowanie = 500;
-				wentyl();
-			}
-			else{
-				sterowanie = 0;
-				wentyl();
-			}
-			change_current_duty_cycle(&htim1, TIM_CHANNEL_1, sterowanie);
-		}
-
 }
 
 /* USER CODE END PFP */
@@ -265,14 +270,16 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM1_Init();
   MX_TIM8_Init();
-  MX_TIM12_Init();
   /* USER CODE BEGIN 2 */
   //ssd1306_TestAll();
   ssd1306_Init(); // Inicjalizacja wyświetlacza
   MCP9808_Init(&hi2c4, 0x18); // inicjalizacja sensora temperatury
   // Tutej nastawiają się dokładności czujnika temperatury :))))
   MCP9808_SetResolution(MCP9808_High_Res);  ///> High 0.125 (130 ms)
-  pid_init(kp, ki, kd);  // tutaj inicjalizuje i nastawia się wartości PID
+  arm_pid_init_f32(&pid, 1);
+  pid.Kp=kp;
+  pid.Kd=kd;
+  pid.Ki=ki;
 
   HAL_UART_Receive_IT(&huart3, received_data, 4);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
@@ -281,7 +288,6 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_Base_Start_IT(&htim3);
   HAL_TIM_Base_Start_IT(&htim4);
-  HAL_TIM_Base_Start_IT(&htim12);
   /* USER CODE END 2 */
 
   /* Infinite loop */
