@@ -60,8 +60,8 @@ uint16_t sterowanie = 0; // 0-1000 (multiplied x10 to get higher resolution)
 float zadana_temperatura = 0;
 
 // zmienne do PID
-float kp = 40.0f;
-float ki = 0.05f;
+float kp = 45.0f;
+float ki = 0.06f;
 float kd = 0.0f;
 float aktualny_blad=0;	// offset
 arm_pid_instance_f32 pid;
@@ -134,17 +134,6 @@ float zadajnik() {
 	return ser;
 }
 
-void wentyl(){
-	float blad = zadana_temperatura - akutalna_temperatura;
-	float hist = -5;
-	if (blad<=hist){
-		HAL_GPIO_WritePin(wentylator_GPIO_Port, wentylator_Pin, GPIO_PIN_SET);
-	}
-	if (blad>=0){
-		HAL_GPIO_WritePin(wentylator_GPIO_Port, wentylator_Pin, GPIO_PIN_RESET);
-	}
-}
-
 // Jakbym miał powiedzieć gdzie sie wypierdoli ten kod to wlasnie tutaj
 void change_current_duty_cycle(TIM_HandleTypeDef* htim, uint32_t channel, uint16_t current_duty_cycle)
 {
@@ -209,8 +198,13 @@ void transmit_data(float current_temp){
     char data_buf[100];
     gcvt(current_temp, 6, data_buf); // convertuje float na string
     strcat(data_buf, ";"); // dodaje srednik
-    //gcvt(set_temp, 6, data_buf+strlen(data_buf)); // dodaje set_temp do stringa
     gcvt(sterowanie/1.0f, 6, data_buf+strlen(data_buf));
+    if(HAL_GPIO_ReadPin(wentylator_GPIO_Port, wentylator_Pin)==GPIO_PIN_RESET){
+    	strcat(data_buf, ";0.0");
+    }
+    else{
+    	strcat(data_buf, ";1.0");
+    }
     strcat(data_buf, "\r\n");
     HAL_UART_Transmit(&huart3, data_buf, strlen(data_buf), 100);
 }
@@ -222,23 +216,27 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		aktualny_blad = (zadana_temperatura-akutalna_temperatura);
 		if(grzanie_on_off()){
 			//sterowanie = 500;
-			if(aktualny_blad>-4){
-				sterowanie = round(arm_pid_f32(&pid, aktualny_blad));
-				if(sterowanie>500){
-					sterowanie = 500;
-				}
-				if(sterowanie<0){
-					sterowanie = 0;
-				}
-				ograniczenie_sygnału_cmsis(&pid);
+			sterowanie = round(arm_pid_f32(&pid, aktualny_blad));
+			if(sterowanie>500){
+				sterowanie = 500;
+				HAL_GPIO_WritePin(wentylator_GPIO_Port, wentylator_Pin, GPIO_PIN_RESET);
 			}
-			wentyl();
+			else if(sterowanie>0&&aktualny_blad>0){
+				HAL_GPIO_WritePin(wentylator_GPIO_Port, wentylator_Pin, GPIO_PIN_RESET);
+			}
+			else if(sterowanie==0){
+				HAL_GPIO_WritePin(wentylator_GPIO_Port, wentylator_Pin, GPIO_PIN_SET);
+			}
+			ograniczenie_sygnału_cmsis(&pid);
+			if(HAL_GPIO_ReadPin(wentylator_GPIO_Port, wentylator_Pin)==GPIO_PIN_SET){
+				sterowanie = 0;
+			}
 		}
 		else{
 			arm_pid_reset_f32(&pid);
 			nastawy_pid_cmsis(&pid);
 			sterowanie = 0;
-			wentyl();
+			HAL_GPIO_WritePin(wentylator_GPIO_Port, wentylator_Pin, GPIO_PIN_SET);
 		}
 		change_current_duty_cycle(&htim1, TIM_CHANNEL_1, sterowanie);
 	}
